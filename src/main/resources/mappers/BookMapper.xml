@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jili.mapper.BookMapper">
+
+    <select id="queryBooksByIds" resultType="com.jili.enity.Book">
+        select * from t_book where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+    <select id="fuzzyQueryBooks" resultType="com.jili.enity.Book">
+        select * from t_book
+        <where>
+            <if test="title != null">
+                title like concat('%', concat(#{title}),'%')
+            </if>
+        </where>
+    </select>
+    <select id="queryBooksByCondition" resultType="com.jili.enity.Book">
+        select * from t_book b 
+        <where>
+            <choose>
+                <when test="title != null">
+                    b.title like concat('%', concat(#{title}, '%'))
+                </when>
+                <when test="author != null">
+                    b.author = #{author}
+                </when>
+                <otherwise>
+
+                </otherwise>
+            </choose>
+        </where>
+    </select>
+
+    <insert id="addBook" useGeneratedKeys="true" keyProperty="id">
+        <selectKey keyProperty="id" resultType="Long" order="BEFORE">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into t_book(id, user_id, title, author, price, create_time)
+        values (#{id}, #{userId}, #{title}, #{author}, #{price}, #{createTime})
+    </insert>
+
+    <update id="updateBookById" parameterType="com.jili.enity.Book">
+        update t_book b
+        <set>
+            <if test="title != null and title != ''">
+                b.title = #{title},
+            </if>
+            <if test="author != null and author != ''">
+                b.author = #{author},
+            </if>
+            <if test="price != null">
+                b.price = #{price}
+            </if>
+        </set>
+        <where>
+            id = #{id}
+        </where>
+    </update>
+
+    <select id="queryBooksByTrimWhere" resultType="com.jili.enity.Book">
+        select * from t_book b
+        <trim prefix="WHERE" prefixOverrides="AND|OR">
+            <if test="title != null">
+                b.title like concat('%', concat(#{title}), '%')
+            </if>
+            <if test="author != null">
+                AND b.author = #{author}
+            </if>
+        </trim>
+    </select>
+    <update id="updateBooksByTrimSet">
+        update t_book b
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null and title != ''">
+                b.title = #{title}
+            </if>
+            <if test="author != null and author != ''">
+                b.author = #{author}
+            </if>
+        </trim>
+        where b.id = #{id}
+    </update>
+    <!--    7.1 foreach(循环array参数) - 作为where中in的条件-->
+    <select id="getStudentsByArray" resultType="com.jili.enity.Book">
+        select * from t_book t where t.id in
+        <foreach collection="array" item="ids" open="(" separator="," close=")">
+            #{ids}
+        </foreach>
+    </select>
+    <select id="getStudentsByList" resultType="com.jili.enity.Book">
+        select * from t_book b where b.id in
+        <foreach collection="list" item="ids" open="(" separator="," close=")">
+            #{ids}
+        </foreach>
+
+    </select>
+    <select id="queryBooksByTypes" resultType="com.jili.enity.Book">
+        select * from t_book
+        where
+        <choose>
+            <when test="typeList != null and typeList.size() > 0">
+                type in
+                <foreach item="item" collection="typeList" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </when>
+        </choose>
+        <!-- 拼接cityCode条件 -->
+        <if test="cityCode != null and cityCode != ''">
+            and city_code = #{cityCode}
+        </if>
+
+        <!-- 拼接owner条件 -->
+        <if test="owner != null and owner != ''">
+            and owner = #{owner}
+        </if>
+        <if test="typeList.contains(1) and idAdminFlag">
+            or type = 1
+        </if>
+    </select>
+    <select id="queryBySwitch" resultType="com.jili.enity.Book">
+        select *  from t_book b
+        <where>
+            <choose>
+                <when test="id != null and id != ''">
+                    b.id = #{id}
+                </when>
+                <when test="title != null and title != ''">
+                    and b.title = #{title}
+                </when>
+                <otherwise>
+                    and b.author like concat ('%', #{author}, '%')
+                </otherwise>
+            </choose>
+        </where>
+    </select>
+    <select id="selectBookByTrim" resultType="com.jili.enity.Book">
+        select * from t_book
+        <trim prefix="where" prefixOverrides="and | or">
+            <if test="author != null and author != ''">
+                and author = #{author}
+            </if>
+            <if test="title != null and title != ''">
+                and title like concat ('%', #{title} '%')
+            </if>
+        </trim>
+    </select>
+    <update id="updateBookByTrim">
+        update t_book
+        <trim prefix="set" suffixOverrides=",">
+            <if test="author != null and author != ''">
+                author = #{author},
+            </if>
+            <if test="title != null and title != ''">
+                title = #{title}
+            </if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <insert id="addBookTrim">
+        insert into t_book
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="title != null">title,</if>
+            <if test="author != null">author,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="type != null">type,</if>
+            <if test="owner != null">owner,</if>
+            <if test="cityCode != null">city_code,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="title != null">#{title},</if>
+            <if test="author != null">#{author},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="type != null">#{type},</if>
+            <if test="owner != null">#{owner},</if>
+            <if test="cityCode != null">#{cityCode},</if>
+        </trim>
+    </insert>
+
+    <select id="batchQueryByArray" resultType="com.jili.enity.Book">
+        select * from t_book
+        where id in
+        <foreach item="ids" collection="array" open="(" separator="," close=")">
+            #{ids}
+        </foreach>
+    </select>
+
+    <delete id="batchDeleteByArray">
+        delete from t_book where id in
+        <foreach item="userIds" collection="array" open="(" separator="," close=")">
+            #{userIds}
+        </foreach>
+    </delete>
+    <!--一对多-->
+    <resultMap id="baseMap" type="com.jili.enity.UserVo">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="age" column="age"/>
+        <result property="phone" column="phone"/>
+        <collection property="books" ofType="com.jili.enity.Book">
+            <result property="title" column="title"/>
+            <result property="author" column="author"/>
+            <result property="price" column="price"/>
+        </collection>
+    </resultMap>
+    <select id="queryAllUserInfo" resultMap="baseMap">
+        select   u.id,
+                 u.username,
+                 u.age,
+                 u.phone,
+                 b.title,
+                 b.author,
+                 b.price
+        from t_user u left join t_book b on u.id = b.user_id
+    </select>
+
+    <insert id="insertUserWithEnum">
+        insert into t_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="username != null">username,</if>
+            <if test="age != null">age,</if>
+            <if test="phone != null">phone,</if>
+            <if test="sex != null">gender,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="username != null">#{username},</if>
+            <if test="age != null">#{age},</if>
+            <if test="phone != null">#{phone},</if>
+            <if test="sex != null">#{sex},</if>
+        </trim>
+    </insert>
+
+
+
+
+
+
+</mapper>
